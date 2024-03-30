@@ -20,16 +20,28 @@ set more off
 cd "C:\Users\css7c\OneDrive\Desktop\Grand Challenges-Call for Abstract\Merged"
 use "CMPS 2020 contextual full adult sample weighted STATA.dta", clear
 
-keep county_name county_fips R_st_fips R_st_name
+keep county_name county_fips R_st_fips R_st_name date
 //keep if county_name == "Douglas County" & R_st_name == "Wisconsin"
 
 
+/*
+keep date 
+sort date
+by date: gen feq = _N
+//by date: keep if _n==1
+
+gsort -freq date
+list date freq
+*/
   
 // R_st_fips is non-numerical so I cast it as a string
 gen temp = string(R_st_fips) + county_fips
 
 // Now I re-cast it as a numerical value
 gen FIPS = real(temp)
+
+
+
 
 
 /*
@@ -40,11 +52,22 @@ Drought Monitoring data
 
 
 use "droughtMonitoring.dta", clear
-keep FIPS County State 
+keep FIPS County State D3 ValidStart
+keep if D3 != 0
+keep if month(ValidStart) == 11 & day(ValidStart) == 3 //11/3/2020 was general election day
 
-//keep if County == "Douglas County" & State == "WI"
+//duplicates drop
+
+//keep if D3 != 100
+
+//keep if County == "Douglas County" //& State == "WI"
+
+//Keep all observations that have maximum value of a variable in each group
+bysort FIPS: egen maxDrought = max(D3)
+keep if D3 == maxDrought
 
 
+duplicates drop
 
 /*
 =======
