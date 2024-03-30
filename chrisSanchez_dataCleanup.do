@@ -37,8 +37,10 @@ tab Q504r3 //In the past year, which of the following has caused you....????
 tab Q793r5
 
 
-keep county_name county_fips R_st_fips R_st_name date race Q1r11 Q99r7 Q131r8
+keep county_name county_fips R_st_fips R_st_name date race MedianHHInc Q1r11 Q99r7 Q131r8
 //keep if county_name == "Douglas County" & R_st_name == "Wisconsin"
+
+label variable MedianHHInc "Median household income"
 
 drop if R_st_fips == .
 drop if missing(county_fips)
@@ -68,11 +70,14 @@ Drought Monitoring data
 
 
 use "droughtMonitoring.dta", clear
-//rename D3 DroughtLevel
-//label variable DroughtLevel "Percent of extreme drought level"
-keep FIPS County State D3 ValidStart
-keep if D3 != 0
-keep if month(ValidStart) == 11 & day(ValidStart) == 3 //11/3/2020 was general election day
+rename D3 DroughtLevel
+rename ValidStart SurveyDate
+label variable DroughtLevel "Percent of extreme drought level"
+label variable SurveyDate "Date CMPS survey was conducted" 
+
+keep FIPS County State DroughtLevel SurveyDate
+keep if DroughtLevel != 0
+keep if month(SurveyDate) == 11 & day(SurveyDate) == 3 //11/3/2020 was general election day
 
 duplicates report FIPS
 
@@ -101,14 +106,6 @@ Merge the data
 //use "droughtMonitoring.dta", clear
 
 
-/*
-save "CMPS_2020_clean.dta", replace
-use "droughtMonitoring.dta", clear
-keep County State None D0 D1 D2 D3 D4 ,
-if County == "Los Angeles County"
-save "droughtMonitoring_clean.dta", replace
-*/
-
 
 //Merge the two cleaned datasets
 clear all
@@ -118,7 +115,7 @@ drop _merge
 save "CMPS_Drought_Master.dta", replace
 
 use "CMPS_Drought_Master.dta", clear
-drop if D3 == .
+drop if DroughtLevel == .
 
 
 
