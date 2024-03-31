@@ -110,24 +110,65 @@ drop if race == .
 =======
 Analysis
 =======
+
+
+. label list
+Q1r11:
+           0 NO TO: Combating climate change and pollution
+           1 Combating climate change and pollution
+Q99r7:
+           1 Very effective
+           2 Somewhat effective
+           3 Neither effective nor ineffective
+           4 Somewhat ineffective
+           5 Very ineffective
+Q131r8:
+           1 Strongly support
+           2 Somewhat support
+           3 Neither support or oppose
+           4 Somewhat oppose
+           5 Strongly oppose
+race:
+           1 White
+           2 Latino
+           3 Black
+           4 AAPI
+           5 Am Ind
 */
 
 
 
+tab race
+label list
+
+
 // Create dummy variables for Race
+
 /*
 gen race_black = (race=="Black")
 gen race_white = (race=="White")
 gen race_latino = (race=="Latino")
 gen race_aapi = (race=="AAPI")
 */
-gen race_black = (race==1)
-gen race_white = (race==2)
-gen race_latino = (race==3)
+
+/* 
+This reads "each observation will have a value of 1 if the corresponding 
+observation in the "race" variable is coded as 1, and 0 otherwise. 
+*/
+ 
+ gen race_white = (race==1)
+gen race_latino = (race==2)
+gen race_black = (race==3)
 gen race_aapi = (race==4)
-
-
+gen race_AmIndian = (race==5)
 
 // Run multinomial logistic regression
-mlogit Q131r8 DroughtLevel MedianHHInc race_black race_white race_latino race_aapi, baseoutcome(1)
+mlogit Q131r8 DroughtLevel MedianHHInc race_black race_white race_latino /// 
+race_aapi, baseoutcome(1)
+
+
+
+
+
+
 
