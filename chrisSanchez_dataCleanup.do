@@ -1,7 +1,8 @@
 /*
-====================
-Author: Christopher Sanchez; Feb. 2024
-====================
+============================
+Author: Christopher Sanchez
+Feb, 2024
+============================
 */
 
 
@@ -85,26 +86,12 @@ save "droughtMonitoring_clean.dta", replace
 duplicates report FIPS
 
 
-//keep if County == "Douglas County" //& State == "WI"
-
-/*
-//Keep all observations that have maximum value of a variable in each group
-bysort FIPS: egen maxDrought = max(D3)
-keep if D3 == maxDrought
-*/
-
-
 
 /*
 =======
 Merge the data
 =======
 */
-
-//rename county_name County
-//keep MedianHHInc GINI County R_zip Total_Pop R_st_name US_Dist_State race
-//use "droughtMonitoring.dta", clear
-
 
 
 //Merge the two cleaned datasets
@@ -116,6 +103,31 @@ save "CMPS_Drought_Master.dta", replace
 
 use "CMPS_Drought_Master.dta", clear
 drop if DroughtLevel == .
+drop if race == .
 
 
+/*
+=======
+Analysis
+=======
+*/
+
+
+
+// Create dummy variables for Race
+/*
+gen race_black = (race=="Black")
+gen race_white = (race=="White")
+gen race_latino = (race=="Latino")
+gen race_aapi = (race=="AAPI")
+*/
+gen race_black = (race==1)
+gen race_white = (race==2)
+gen race_latino = (race==3)
+gen race_aapi = (race==4)
+
+
+
+// Run multinomial logistic regression
+mlogit Q131r8 DroughtLevel MedianHHInc race_black race_white race_latino race_aapi, baseoutcome(1)
 
