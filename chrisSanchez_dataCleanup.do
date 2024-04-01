@@ -6,7 +6,6 @@ Feb, 2024
 */
 
 
-
 /*
 ==============
 CMPS 2020 data
@@ -48,16 +47,16 @@ drop if missing(county_fips)
 gen temp = string(R_st_fips) + county_fips
 
 // Now I re-cast it as a numerical value
-gen FIPS = real(temp)
+gen fips = real(temp)
 
 
 drop R_st_fips county_fips temp
 drop if missing(county_name)
-drop if FIPS == .
+drop if fips == .
 drop if race == .
 drop if Q131r8 == .
 
-duplicates report FIPS
+duplicates report fips
 
 save "CMPS_2020_clean.dta", replace
 
@@ -68,21 +67,19 @@ Drought Monitoring data
 */
 
 
-use "droughtMonitoring.dta", clear
-rename D3 DroughtLevel
-rename ValidStart SurveyDate
-label variable DroughtLevel "Percent of extreme drought level"
-label variable SurveyDate "Date CMPS survey was conducted" 
+/*
+clear all
+import delimited "C:\Users\css7c\OneDrive\Desktop\Grand Challenges-Call for Abstract\dm_export_20161108_20201103.csv"
+//use "November16_November20.dta.dta"
 
-keep FIPS County State DroughtLevel SurveyDate
-keep if DroughtLevel != 0
-keep if month(SurveyDate) == 11 & day(SurveyDate) == 3 //11/3/2020 was general election day
+//This will provide the number of days of drought from Nov. 2016 - Nov. 2020
+gen drought = 0
+replace drought = 1 if D0 > 0 //SHOULD BE D3? 
+collapse(sum) drought, by(fips)
+save "November16_November20.dta", replace
+*/
 
-duplicates report FIPS
-
-save "droughtMonitoring_clean.dta", replace
-duplicates report FIPS
-
+*now you can merge
 
 
 /*
@@ -93,16 +90,15 @@ Merge the data
 
 
 //Merge the two cleaned datasets
-clear all
 use "CMPS_2020_clean.dta", clear
-merge m:1 FIPS using "droughtMonitoring_clean.dta"
+merge m:1 fips using "November16_November20.dta"
 drop _merge
 save "CMPS_Drought_Master.dta", replace
 
-use "CMPS_Drought_Master.dta", clear
-drop if DroughtLevel == .
-drop if race == .
 
+use "CMPS_Drought_Master.dta", clear
+drop if MedianHHInc == .
+drop if drought == .
 
 /*
 =======
@@ -148,11 +144,6 @@ label list
 
 // Create dummy variables for Race
 
-/*
-gen race_black = (race=="Black")
-gen race_white = (race=="White")
-gen race_latino = (race=="Latino")
-gen race_aapi = (race=="AAPI")
 */
 
 /* 
@@ -168,7 +159,7 @@ gen race_AmIndian = (race==5)
 
 
 // Run multinomial logistic regression
-asdoc mlogit Q131r8 DroughtLevel MedianHHInc race_black race_white race_latino /// 
+asdoc mlogit Q131r8 drought MedianHHInc race_black race_white race_latino /// 
 race_aapi, baseoutcome(1)
 outreg2 using myreg.doc, replace
 
@@ -184,40 +175,41 @@ RESULTS:
 Strongly_support          |  (base outcome)
 --------------------------+----------------------------------------------------------------
 Somewhat_support          |
-             DroughtLevel |  -.0031286   .0036169    -0.86   0.387    -.0102176    .0039604
-              MedianHHInc |   3.88e-06   3.65e-06     1.06   0.288    -3.28e-06     .000011
-               race_black |   .1262774   .3602414     0.35   0.726    -.5797828    .8323376
-               race_white |   .3529701   .3029593     1.17   0.244    -.2408191    .9467593
-              race_latino |  -.0700564   .2982773    -0.23   0.814    -.6546691    .5145563
+                  drought |   .0006455   .0008063     0.80   0.423    -.0009348    .0022258
+              MedianHHInc |   3.93e-07   8.99e-07     0.44   0.662    -1.37e-06    2.16e-06
+               race_black |  -.0936459   .0935507    -1.00   0.317    -.2770019    .0897101
+               race_white |   .1675677   .0990385     1.69   0.091    -.0265441    .3616795
+              race_latino |  -.1238497   .0931869    -1.33   0.184    -.3064927    .0587932
                 race_aapi |          0  (omitted)
-                    _cons |   -.581573    .399039    -1.46   0.145    -1.363675    .2005292
+                    _cons |  -.5696713   .1309597    -4.35   0.000    -.8263476   -.3129949
 --------------------------+----------------------------------------------------------------
 Neither_support_or_oppose |
-             DroughtLevel |   .0020606   .0041157     0.50   0.617    -.0060061    .0101273
-              MedianHHInc |  -4.94e-06   4.43e-06    -1.12   0.265    -.0000136    3.74e-06
-               race_black |  -.2870281   .4166942    -0.69   0.491    -1.103734    .5296774
-               race_white |   .1129297   .3368181     0.34   0.737    -.5472216    .7730811
-              race_latino |  -.2999203   .3307855    -0.91   0.365     -.948248    .3484073
+                  drought |   .0002803   .0008574     0.33   0.744    -.0014003    .0019608
+              MedianHHInc |  -2.21e-06   9.99e-07    -2.21   0.027    -4.16e-06   -2.48e-07
+               race_black |  -.2945077   .1037407    -2.84   0.005    -.4978357   -.0911798
+               race_white |   .3858439   .1027952     3.75   0.000     .1843689    .5873188
+              race_latino |  -.0409416   .0992039    -0.41   0.680    -.2353776    .1534944
                 race_aapi |          0  (omitted)
-                    _cons |  -.4049424   .4562011    -0.89   0.375     -1.29908    .4891954
+                    _cons |   -.553075   .1404934    -3.94   0.000    -.8284371    -.277713
 --------------------------+----------------------------------------------------------------
 Somewhat_oppose           |
-             DroughtLevel |  -.0056695   .0066313    -0.85   0.393    -.0186666    .0073275
-              MedianHHInc |   6.58e-06   6.56e-06     1.00   0.316    -6.28e-06    .0000194
-               race_black |   .2089322   .9019988     0.23   0.817    -1.558953    1.976817
-               race_white |   1.458601   .6234606     2.34   0.019     .2366406    2.680561
-              race_latino |   1.044044   .6309769     1.65   0.098    -.1926476    2.280736
+                  drought |    .003186    .001555     2.05   0.040     .0001383    .0062336
+              MedianHHInc |  -4.35e-07   1.82e-06    -0.24   0.811    -4.00e-06    3.13e-06
+               race_black |  -.1806024   .2100215    -0.86   0.390     -.592237    .2310322
+               race_white |   .9776818   .1815512     5.39   0.000     .6218479    1.333516
+              race_latino |   .0731724     .19532     0.37   0.708    -.3096478    .4559925
                 race_aapi |          0  (omitted)
-                    _cons |  -3.020275   .8205175    -3.68   0.000     -4.62846    -1.41209
+                    _cons |  -2.720646   .2688255   -10.12   0.000    -3.247535   -2.193758
 --------------------------+----------------------------------------------------------------
 Strongly_oppose           |
-             DroughtLevel |   .0017777   .0050843     0.35   0.727    -.0081873    .0117427
-              MedianHHInc |   4.68e-06   5.13e-06     0.91   0.362    -5.39e-06    .0000147
-               race_black |  -1.819695   1.062988    -1.71   0.087    -3.903113    .2637234
-               race_white |   .9682952   .3923325     2.47   0.014     .1993377    1.737253
-              race_latino |  -.0618432   .4355442    -0.14   0.887    -.9154941    .7918076
+                  drought |   .0038968    .001197     3.26   0.001     .0015508    .0062429
+              MedianHHInc |   1.07e-06   1.38e-06     0.77   0.439    -1.63e-06    3.76e-06
+               race_black |  -.8113566   .2022994    -4.01   0.000    -1.207856    -.414857
+               race_white |   1.480955   .1394511    10.62   0.000     1.207636    1.754274
+              race_latino |   .2224431   .1539998     1.44   0.149     -.079391    .5242772
                 race_aapi |          0  (omitted)
-                    _cons |  -1.976286   .5841844    -3.38   0.001    -3.121266   -.8313053
+                    _cons |  -2.466162   .2109388   -11.69   0.000    -2.879594   -2.052729
 -------------------------------------------------------------------------------------------
+
 
 */
