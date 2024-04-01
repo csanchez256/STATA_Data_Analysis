@@ -67,17 +67,16 @@ Drought Monitoring data
 */
 
 
-/*
+
 clear all
 import delimited "C:\Users\css7c\OneDrive\Desktop\Grand Challenges-Call for Abstract\dm_export_20161108_20201103.csv"
-//use "November16_November20.dta.dta"
 
-//This will provide the number of days of drought from Nov. 2016 - Nov. 2020
+*This will provide the number of days of drought from Nov. 2016 - Nov. 2020
 gen drought = 0
-replace drought = 1 if D0 > 0 //SHOULD BE D3? 
+replace drought = 1 if D0 > 0 //Note: this includes all drought levels no matter the severity
 collapse(sum) drought, by(fips)
 save "November16_November20.dta", replace
-*/
+
 
 *now you can merge
 
@@ -142,11 +141,8 @@ tab race
 label list
 
 
-// Create dummy variables for Race
-
-*/
-
 /* 
+Create dummy variables for race
 This reads "each observation will have a value of 1 if the corresponding 
 observation in the "race" variable is coded as 1, and 0 otherwise. 
 */
